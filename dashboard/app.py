@@ -2,8 +2,18 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 DB_PATH = "database/properties.db"
+
+try:
+    from database.seed_on_startup import ensure_data
+    ensure_data()
+except:
+    pass
 
 st.set_page_config(page_title="Coastal Intel", layout="wide")
 st.title("Coastal Property Intelligence - Namibia")
@@ -58,6 +68,84 @@ fig3 = px.box(df[df["price"] > 0], x="listing_type", y="price", color="listing_t
               labels={"listing_type": "Type", "price": "Price (N$)"},
               color_discrete_sequence=["#2ecc71", "#3498db"])
 st.plotly_chart(fig3, use_container_width=True)
+
+st.divider()
+
+st.subheader("Airbnb Yield Intelligence - Coastal Namibia")
+try:
+    airbnb_df = pd.read_sql_query("SELECT * FROM airbnb_listings", 
+                                   sqlite3.connect(DB_PATH))
+    if not airbnb_df.empty:
+        col1, col2, col3, col4 = st.columns(4)
+        lang = airbnb_df[airbnb_df["area"] == "Langstrand"]
+        col1.metric("Langstrand Avg/Night", f"N${lang['price_per_night'].mean():,.0f}")
+        col2.metric("Langstrand Min/Night", f"N${lang['price_per_night'].min():,.0f}")
+        col3.metric("Langstrand Max/Night", f"N${lang['price_per_night'].max():,.0f}")
+        col4.metric("Listings Tracked", len(airbnb_df))
+
+        airbnb_summary = airbnb_df.groupby("area").agg(
+            avg_price=("price_per_night", "mean"),
+            min_price=("price_per_night", "min"),
+            max_price=("price_per_night", "max"),
+            listings=("price_per_night", "count"),
+            avg_rating=("rating", "mean")
+        ).reset_index().round(0)
+
+        fig_airbnb = px.bar(airbnb_summary, x="area", y="avg_price", 
+                            color="area",
+                            title="Average Airbnb Nightly Rate by Area (N$)",
+                            color_discrete_sequence=px.colors.qualitative.Set2)
+        fig_airbnb.update_layout(showlegend=False)
+        st.plotly_chart(fig_airbnb, use_container_width=True)
+
+        st.subheader("Monthly Revenue Projections")
+        proj_col1, proj_col2, proj_col3 = st.columns(3)
+        for area, col in zip(["Langstrand", "Swakopmund", "Walvis Bay"], 
+                             [proj_col1, proj_col2, proj_col3]):
+            area_df = airbnb_df[airbnb_df["area"] == area]
+            if not area_df.empty:
+                avg = area_df["price_per_night"].mean()
+                col.markdown(f"**{area}**")
+                col.metric("65% occupancy", f"N${avg * 0.65 * 30:,.0f}/mo")
+                col.metric("75% occupancy", f"N${avg * 0.75 * 30:,.0f}/mo")
+                col.metric("85% occupancy", f"N${avg * 0.85 * 30:,.0f}/mo")
+except Exception as e:
+    st.info("Airbnb data loading...")
+
+st.divider()
+
+st.subheader("NHIS Settlement Intelligence - National")
+try:
+    nhis_df = pd.read_sql_query(
+        "SELECT * FROM nhis_informal_settlements", 
+        sqlite3.connect(DB_PATH))
+    if not nhis_df.empty:
+        nhis_col1, nhis_col2, nhis_col3, nhis_col4 = st.columns(4)
+        nhis_col1.metric("Total Settlements", len(nhis_df))
+        nhis_col2.metric("Regions Covered", nhis_df["region"].nunique())
+        nhis_col3.metric("Congested", len(nhis_df[nhis_df["congestion_status"]=="Congested"]))
+        nhis_col4.metric("Avg Upgrade Level", f"{nhis_df['upgrade_level'].mean():.1f}/5")
+
+        nhis_summary = nhis_df.groupby("region").agg(
+            settlements=("settlement_name", "count"),
+            avg_upgrade=("upgrade_level", "mean"),
+            congested=("congestion_status", lambda x: (x=="Congested").sum())
+        ).reset_index().round(1)
+
+        fig_nhis = px.bar(nhis_summary.sort_values("settlements", ascending=False),
+                          x="region", y="settlements", color="avg_upgrade",
+                          title="Informal Settlements by Region (colour = avg upgrade level)",
+                          color_continuous_scale="RdYlGn")
+        st.plotly_chart(fig_nhis, use_container_width=True)
+
+        st.subheader("Erongo Coast Detail")
+        erongo = nhis_df[nhis_df["region"] == "Erongo"][
+            ["local_authority", "settlement_name", "congestion_status", 
+             "bulk_services", "upgrade_level", "tenure_security"]
+        ]
+        st.dataframe(erongo, use_container_width=True)
+except Exception as e:
+    st.info("NHIS data loading...")
 
 st.divider()
 
