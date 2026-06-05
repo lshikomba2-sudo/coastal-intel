@@ -107,6 +107,7 @@ with st.sidebar:
     st.link_button("Property24 Namibia", "https://www.property24.co.na")
     if st.button("Refresh Data", type="primary"):
         st.cache_data.clear()
+        st.cache_resource.clear()
         st.rerun()
 
 
