@@ -51,14 +51,14 @@ def render_ai_tools():
         <h2 style='color:white;margin:0;font-size:1.3rem'>
         Exokino AI Deal Engine</h2>
         <p style='color:#9FE1CB;margin:.4rem 0 0 0;font-size:.85rem'>
-        Powered by Groq Llama 3 â€” find, analyse and close deals faster 
+        Powered by Groq Llama 3 — find, analyse and close deals faster 
         than any agency in Namibia</p></div>
     """, unsafe_allow_html=True)
 
     tab1, tab2, tab3 = st.tabs([
-        "ðŸ¦ Bank Feasibility",
-        "ðŸ“ˆ Rental Arbitrage",
-        "ðŸŽ¯ Distressed Scout"
+        "🏦 Bank Feasibility",
+        "📈 Rental Arbitrage",
+        "🎯 Distressed Scout"
     ])
 
     with tab1:
@@ -95,9 +95,9 @@ def render_ai_tools():
         c4.metric("DSCR", f"{dscr:.2f}")
 
         if dscr >= 1.25:
-            st.success("âœ… APPROVED FOR BANK PITCH â€” DSCR above 1.25")
+            st.success("✅ APPROVED FOR BANK PITCH — DSCR above 1.25")
         else:
-            st.error("âŒ REJECTED BY BANK CRITERIA â€” DSCR below 1.25")
+            st.error("❌ REJECTED BY BANK CRITERIA — DSCR below 1.25")
 
         if st.button("Generate Full AI Report", type="primary",
                      key="bank_btn"):
@@ -211,7 +211,7 @@ Flag listings with these triggers:
 MULTI-UNIT: block of flats, complex, multiple units, 
 townhouse park, back rooms, multiple dwellings
 DISTRESSED: repossessed, bank mandate, urgent sale, 
-price reduced, owner relocating, nÃ©gociable, urgent
+price reduced, owner relocating, négociable, urgent
 
 For each match provide a table with:
 Property Type | Town | Price | Urgency | Why it is a target
