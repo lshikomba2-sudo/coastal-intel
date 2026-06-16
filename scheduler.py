@@ -3,6 +3,8 @@ import time
 import subprocess
 import sys
 from datetime import datetime
+from scrapers.mypropertynamibia import run as run_mypropertynam
+from scrapers.namibian_classifieds import run as run_namibian
 
 def run_scraper():
     print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Running Exokino scraper...")
@@ -14,6 +16,8 @@ def run_scraper():
     print(result.stdout)
     if result.stderr:
         print(f"Errors: {result.stderr}")
+    run_mypropertynam()
+    run_namibian()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Scrape complete.")
 
 schedule.every().sunday.at("06:00").do(run_scraper)

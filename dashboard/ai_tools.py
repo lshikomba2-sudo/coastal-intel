@@ -3,10 +3,16 @@ import sqlite3
 import json
 import urllib.request
 import urllib.error
+import os
 
 DB_PATH = "database/properties.db"
 
-GROQ_API_KEY = "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"
+import os
+try:
+    import streamlit as st
+    GROQ_API_KEY = st.secrets.get("GROQ_API_KEY", "") or os.environ.get("GROQ_API_KEY", "")
+except:
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
 def call_ai(prompt, system):
