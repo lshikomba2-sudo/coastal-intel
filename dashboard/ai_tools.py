@@ -77,8 +77,15 @@ def render_ai_tools():
             area = st.selectbox("Area",
                 ["Langstrand","Swakopmund","Walvis Bay",
                  "Henties Bay","Windhoek"])
-            units = st.number_input("Number of units",
-                min_value=1, max_value=20, value=1)
+            col_a, col_b = st.columns(2)
+            with col_a:
+                bedrooms = st.number_input("Bedrooms per unit",
+                    min_value=0, max_value=10, value=2,
+                    help="Bedrooms in each unit/flat")
+            with col_b:
+                units = st.number_input("Number of units",
+                    min_value=1, max_value=50, value=1,
+                    help="1 = single property, 2+ = block of flats or complex")
         with col2:
             nightly = st.number_input("Airbnb nightly rate (N$)",
                 min_value=400, max_value=5000,
@@ -90,6 +97,7 @@ def render_ai_tools():
         r = (0.115 + 0.015) / 12
         n = 15 * 12
         repayment = loan * (r * (1+r)**n) / ((1+r)**n - 1)
+        # Revenue = nightly rate x occupancy x 30 days x number of units
         gross = nightly * (occ/100) * 30 * units
         noi = gross * (1 - 0.15 - 0.10 - 0.20)
         dscr = noi / repayment
@@ -111,7 +119,9 @@ def render_ai_tools():
                 prompt = f"""
 Property: {area}, Namibia
 Purchase Price: N${price:,}
-Units: {units}
+Bedrooms per unit: {bedrooms}
+Number of units: {units}
+Deal type: {"Single property" if units == 1 else f"Multi-unit complex ({units} units)"}
 Nightly Rate: N${nightly}
 Occupancy: {occ}%
 Deposit: N${deposit:,.0f}

@@ -311,3 +311,108 @@ with nhis_tab:
 
 with ai_tab:
     render_ai_tools()
+
+st.divider()
+st.header("🔍 Property Search")
+st.caption("Search across all scraped listings — Property24, Aucor, and more")
+
+search_col1, search_col2, search_col3, search_col4 = st.columns(4)
+
+with search_col1:
+    search_query = st.text_input("Search", 
+        placeholder="e.g. 2 bed Khomasdal, flat Rundu...")
+
+with search_col2:
+    search_type = st.selectbox("Type",
+        ["All", "for-sale", "to-rent"])
+
+with search_col3:
+    search_area = st.selectbox("Area",
+        ["All"] + sorted(df["location"].unique().tolist()))
+
+with search_col4:
+    max_price = st.number_input("Max price (N$)",
+        min_value=0, max_value=50000000,
+        value=0, step=100000,
+        help="0 = no limit")
+
+if search_query or search_type != "All" or search_area != "All" or max_price > 0:
+    conn_search = sqlite3.connect(DB_PATH)
+    
+    query = "SELECT title, price, location, bedrooms, listing_type, url, date_scraped FROM listings WHERE 1=1"
+    params = []
+    
+    if search_query:
+        query += " AND (title LIKE ? OR location LIKE ?)"
+        params.extend([f"%{search_query}%", f"%{search_query}%"])
+    
+    if search_type != "All":
+        query += " AND listing_type = ?"
+        params.append(search_type)
+    
+    if search_area != "All":
+        query += " AND location = ?"
+        params.append(search_area)
+    
+    if max_price > 0:
+        query += " AND price <= ? AND price > 0"
+        params.append(max_price)
+    
+    query += " ORDER BY date_scraped DESC LIMIT 100"
+    
+    search_df = pd.read_sql_query(query, conn_search, params=params)
+    
+    try:
+        auction_query = "SELECT title, price, location, 0 as bedrooms, property_type as listing_type, url, date_scraped FROM auction_listings WHERE 1=1"
+        auction_params = []
+        if search_query:
+            auction_query += " AND (title LIKE ? OR location LIKE ? OR description LIKE ?)"
+            auction_params.extend([f"%{search_query}%", f"%{search_query}%", f"%{search_query}%"])
+        if search_area != "All":
+            auction_query += " AND location LIKE ?"
+            auction_params.append(f"%{search_area}%")
+        if max_price > 0:
+            auction_query += " AND price <= ? AND price > 0"
+            auction_params.append(max_price)
+        auction_df = pd.read_sql_query(auction_query, conn_search, params=auction_params)
+        if not auction_df.empty:
+            auction_df["listing_type"] = "AUCTION - " + auction_df["listing_type"]
+            search_df = pd.concat([search_df, auction_df], ignore_index=True)
+    except:
+        pass
+    
+    conn_search.close()
+    
+    if search_df.empty:
+        st.info("No listings found. Try different search terms.")
+    else:
+        st.success(f"Found {len(search_df)} listings")
+        
+        search_df["price_display"] = search_df["price"].apply(
+            lambda x: f"N${x:,.0f}" if x > 0 else "POA")
+        search_df["beds_display"] = search_df["bedrooms"].apply(
+            lambda x: f"{int(x)} bed" if x > 0 else "-")
+        
+        display_cols = {
+            "title": "Property",
+            "price_display": "Price",
+            "location": "Area", 
+            "beds_display": "Beds",
+            "listing_type": "Type",
+            "date_scraped": "Listed"
+        }
+        
+        st.dataframe(
+            search_df.rename(columns=display_cols)[list(display_cols.values())],
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        if not search_df[search_df["price"] > 0].empty:
+            priced = search_df[search_df["price"] > 0]
+            s1, s2, s3 = st.columns(3)
+            s1.metric("Results found", len(search_df))
+            s2.metric("Avg price", 
+                f"N${priced['price'].mean():,.0f}")
+            s3.metric("Price range",
+                f"N${priced['price'].min():,.0f} — N${priced['price'].max():,.0f}")
