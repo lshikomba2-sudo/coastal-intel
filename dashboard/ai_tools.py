@@ -403,6 +403,11 @@ Write a professional 1-paragraph property valuation summary
 for {val_area}. Include market context, whether the asking 
 price is fair, and a negotiation recommendation. 
 Be specific to the Namibian market.
+
+Important: Use plain text only. Do not use currency symbols 
+like N$ inside dollar signs or any markdown formatting that 
+could cause display issues. Write NAD instead of N$ when 
+referencing amounts in the narrative text.
 """
                     system = """You are a certified property 
 valuer with 15 years experience in the Namibian real estate 

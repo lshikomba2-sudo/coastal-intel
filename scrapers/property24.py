@@ -67,7 +67,7 @@ def scrape_area(area, listing_type="to-rent"):
     for card in cards:
         try:
             title = card.find("span", class_="p24_title")
-            title = title.text.strip() if title else "N/A"
+            title = title.text.strip() if title else location
 
             price_tag = card.find("span", class_="p24_price")
             price_text = price_tag.text.strip() if price_tag else "0"

@@ -191,6 +191,8 @@ with market_tab:
         st.plotly_chart(style_chart(fig_m2), use_container_width=True)
 
     st.subheader("Raw Listings")
+    df = df.drop_duplicates(subset=["url"], keep="last")
+
     area_filter = st.multiselect(
         "Filter by area",
         options=df["location"].unique(),
